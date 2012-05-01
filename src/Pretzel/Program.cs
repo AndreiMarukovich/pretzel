@@ -74,19 +74,36 @@ namespace Pretzel
         public void WaitForClose()
         {
             Console.WriteLine("Press any key to continue...");
-            Console.ReadKey();
+            try
+            {
+                Console.ReadKey();
+            }
+            catch (InvalidOperationException)
+            {
+                //Output is redirected, we don't care to keep console open just let it close
+            }
         }
 
         public void Compose()
         {
-            var first = new AssemblyCatalog(Assembly.GetExecutingAssembly());
-            var container = new CompositionContainer(first);
+            try
+            {
+                var first = new AssemblyCatalog(Assembly.GetExecutingAssembly());
+                var container = new CompositionContainer(first);
 
-            var batch = new CompositionBatch();
-            batch.AddExportedValue<IFileSystem>(new FileSystem());
-            batch.AddExportedValue<IContentTransform>(new WebSequenceDiagrams());
-            batch.AddPart(this);
-            container.Compose(batch);
+                var batch = new CompositionBatch();
+                batch.AddExportedValue<IFileSystem>(new FileSystem());
+                batch.AddExportedValue<IContentTransform>(new WebSequenceDiagrams());
+                batch.AddPart(this);
+                container.Compose(batch);
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine("Unable to load: \r\n{0}", 
+                    string.Join("\r\n", ex.LoaderExceptions.Select(e=>e.Message)));
+
+                throw;
+            }
         }
     }
 }
